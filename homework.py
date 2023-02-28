@@ -101,9 +101,9 @@ def parse_status(homework):
     homework_status = homework.get('status')
     try:
         verdict = HOMEWORK_VERDICTS[homework_status]
-    except KeyError as errkey:
-        logger.error('Undocumented status of homework.', errkey)
-        return ('Undocumented status of homework.', errkey)
+    except KeyError as error:
+        logger.error('Неизвестный статус.', error)
+        return ('Неизвестный статус.', error)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
