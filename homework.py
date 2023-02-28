@@ -1,4 +1,3 @@
-# coding=windows-1251
 import logging
 import os
 import sys
@@ -23,99 +22,98 @@ HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 
 HOMEWORK_VERDICTS = {
-    'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
-    'reviewing': 'Работа взята на проверку ревьюером.',
-    'rejected': 'Работа проверена: у ревьюера есть замечания.'
+    'approved': 'Р Р°Р±РѕС‚Р° РїСЂРѕРІРµСЂРµРЅР°: СЂРµРІСЊСЋРµСЂСѓ РІСЃС‘ РїРѕРЅСЂР°РІРёР»РѕСЃСЊ. РЈСЂР°!',
+    'reviewing': 'Р Р°Р±РѕС‚Р° РІР·СЏС‚Р° РЅР° РїСЂРѕРІРµСЂРєСѓ СЂРµРІСЊСЋРµСЂРѕРј.',
+    'rejected': 'Р Р°Р±РѕС‚Р° РїСЂРѕРІРµСЂРµРЅР°: Сѓ СЂРµРІСЊСЋРµСЂР° РµСЃС‚СЊ Р·Р°РјРµС‡Р°РЅРёСЏ.'
 }
 
 
 def check_tokens():
-    """Проверка наличия обязательных переменных."""
-    logging.info('Проверка наличия всех токенов')
+    """РџСЂРѕРІРµСЂРєР° РЅР°Р»РёС‡РёСЏ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹С… РїРµСЂРµРјРµРЅРЅС‹С…."""
     if all((PRACTICUM_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_TOKEN)):
         return bool
 
 
 def send_message(bot, message):
-    """Отправляет сообщение в Telegram чат."""
+    """РћС‚РїСЂР°РІР»СЏРµС‚ СЃРѕРѕР±С‰РµРЅРёРµ РІ Telegram С‡Р°С‚."""
     try:
-        logging.info('Отправка статуса')
+        logging.info('РћС‚РїСЂР°РІРєР° СЃРѕРѕР±С‰РµРЅРёСЏ РІ С‡Р°С‚')
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.TelegramError as error:
         logging.error('TelegramError:', error)
         return('TelegramError:', error)
     except Exception:
-        logging.error('Возникла другая проблема')
-        return('Возникла другая проблема')
+        logging.error('РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё СЃРѕРѕР±С‰РµРЅРёСЏ')
+        return('РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё СЃРѕРѕР±С‰РµРЅРёСЏ')
     else:
-        logging.debug(f'Сообщение отправлено {message}')
+        logging.debug(f'РћС‚РїСЂР°РІРєР° СЃРѕРѕР±С‰РµРЅРёСЏ {message}')
 
 
 def get_api_answer(timestamp):
-    """Делаем запрос к API."""
+    """Р”РµР»Р°РµРј Р·Р°РїСЂРѕСЃ Рє API."""
     TimeStamp = timestamp or int(time.time())
     params_request = {
         'url': ENDPOINT,
         'headers': HEADERS,
         'params': {'from_date': TimeStamp},
     }
-    message = ('Запрос: {url}, {headers}, {params}.'
+    message = ('Р—Р°РїСЂРѕСЃ: {url}, {headers}, {params}.'
                ).format(**params_request)
     logging.info(message)
     try:
         response = requests.get(**params_request)
         if response.status_code != HTTPStatus.OK:
             raise WrongResponseCode(
-                f'Нет ответа. '
-                f'Код ответа: {response.status_code}. '
-                f'Что не так: {response.reason}. '
-                f'Текст: {response.text}.'
+                f'РћС‚РІРµС‚ РЅРµ РїРѕР»СѓС‡РµРЅ. '
+                f'РљРѕРґ РѕС‚РІРµС‚Р°: {response.status_code}. '
+                f'РџСЂРёС‡РёРЅР°: {response.reason}. '
+                f'РўРµРєСЃС‚: {response.text}.'
             )
         return response.json()
     except Exception as error:
-        message = ('Нет ответа. Запрос: {url}, {headers}, {params}.'
+        message = ('Р—Р°РїСЂРѕСЃ: {url}, {headers}, {params}.'
                    ).format(**params_request)
         raise WrongResponseCode(message, error)
 
 
 def check_response(response):
-    """Проверяем ответ API на корректность."""
-    logging.debug('Начало проверки')
+    """РџСЂРѕРІРµСЂРёС‚СЊ РІР°Р»РёРґРЅРѕСЃС‚СЊ РѕС‚РІРµС‚Р°."""
+    logging.debug('РџСЂРѕРІРµСЂРєР° РѕС‚РІРµС‚Р° API РЅР° РєРѕСЂСЂРµРєС‚РЅРѕСЃС‚СЊ')
     if not isinstance(response, dict):
-        raise TypeError('Ответ API не является словарем')
+        raise TypeError('РћС‚РІРµС‚ API РЅРµ СЏРІР»СЏРµС‚СЃСЏ dict')
     if 'homeworks' not in response or 'current_date' not in response:
-        raise KeyError('Отсутствует ключ')
+        raise KeyError('РќРµС‚ РєР»СЋС‡Р° homeworks РІ РѕС‚РІРµС‚Рµ API')
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
-        raise TypeError('Ответ API не является листом')
+        raise TypeError('homeworks РЅРµ СЏРІР»СЏРµС‚СЃСЏ list')
     return homeworks
 
 
 def parse_status(homework):
-    """Статус последней работы. Сообщение с информацией о нём."""
+    """РР·РІР»РµРєР°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РґРѕРјР°С€РЅРµР№ СЂР°Р±РѕС‚Рµ."""
     if 'homework_name' not in homework:
-        raise KeyError('Отсутствует ключ "homework_name" в ответе')
+        raise KeyError('РћС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РєР»СЋС‡ "homework_name" РІ РѕС‚РІРµС‚Рµ API')
     if 'status' not in homework:
-        raise KeyError('Отсутствует ключ "status" в ответе')
+        raise KeyError('РћС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РєР»СЋС‡ "status" РІ РѕС‚РІРµС‚Рµ API')
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     try:
         verdict = HOMEWORK_VERDICTS[homework_status]
     except KeyError as error:
-        logger.error('Неизвестный статус.', error)
-        return ('Неизвестный статус.', error)
-    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+        logger.error('РќРµРёР·РІРµСЃС‚РЅС‹Р№ СЃС‚Р°С‚СѓСЃ', error)
+        return ('РќРµРёР·РІРµСЃС‚РЅС‹Р№ СЃС‚Р°С‚СѓСЃ', error)
+    return f'РР·РјРµРЅРёР»СЃСЏ СЃС‚Р°С‚СѓСЃ РїСЂРѕРІРµСЂРєРё СЂР°Р±РѕС‚С‹ "{homework_name}". {verdict}'
 
 
 def main():
-    """Основная логика работы бота."""
+    """РћСЃРЅРѕРІРЅР°СЏ Р»РѕРіРёРєР° СЂР°Р±РѕС‚С‹ Р±РѕС‚Р°."""
     if not check_tokens():
-        logging.critical('Отсутствует токен. Бот остановлен!')
-        sys.exit('Отсутствует один или несколько токенов. Бот остановлен!')
+        logging.critical('РћС‚СЃСѓС‚СЃС‚РІСѓРµС‚ С‚РѕРєРµРЅ. Р‘РѕС‚ РѕСЃС‚Р°РЅРѕРІР»РµРЅ!')
+        sys.exit('РћС‚СЃСѓС‚СЃС‚РІСѓРµС‚ С‚РѕРєРµРЅ. Р‘РѕС‚ РѕСЃС‚Р°РЅРѕРІР»РµРЅ!')
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
-    send_message(bot, 'Старт!')
-    logging.info('Старт!')
+    send_message(bot, 'РЎС‚Р°СЂС‚!')
+    logging.info('РЎС‚Р°СЂС‚!')
     error_msg = ''
 
     while True:
@@ -128,14 +126,14 @@ def main():
             if homeworks:
                 message = parse_status(homeworks[0])
             else:
-                message = 'Статус дз не обнавлен'
+                message = 'РќРµС‚ РЅРѕРІС‹С… СЃС‚Р°С‚СѓСЃРѕРІ'
             if message != error_msg:
                 send_message(bot, message)
                 error_msg = message
             else:
                 logging.info(message)
         except Exception as error:
-            message = f'В работе бота произошлел сбой: {error}'
+            message = f'РЎР±РѕР№ РІ СЂР°Р±РѕС‚Рµ РїСЂРѕРіСЂР°РјРјС‹: {error}'
             logging.error(message, exc_info=True)
         finally:
             time.sleep(RETRY_PERIOD)
