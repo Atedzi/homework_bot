@@ -1,13 +1,14 @@
 import logging
 import os
-import sys
 import requests
+import sys
 import telegram
 import time
 
 from dotenv import load_dotenv
 from exceptions import WrongResponseCode
 from http import HTTPStatus
+from requests import RequestException
 
 load_dotenv()
 
@@ -30,32 +31,26 @@ HOMEWORK_VERDICTS = {
 
 def check_tokens():
     """Проверка наличия обязательных переменных."""
-    if all((PRACTICUM_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_TOKEN)):
-        return bool
+    return all([TELEGRAM_TOKEN, PRACTICUM_TOKEN, TELEGRAM_CHAT_ID])
 
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
     try:
-        logging.info('Отправка сообщения в чат')
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.TelegramError as error:
         logging.error('TelegramError:', error)
-        return('TelegramError:', error)
-    except Exception:
-        logging.error('Ошибка отправки сообщения')
-        return('Ошибка отправки сообщения')
     else:
         logging.debug(f'Отправка сообщения {message}')
 
 
 def get_api_answer(timestamp):
     """Делаем запрос к API."""
-    TimeStamp = timestamp or int(time.time())
+    params = {'from_date': timestamp}
     params_request = {
         'url': ENDPOINT,
         'headers': HEADERS,
-        'params': {'from_date': TimeStamp},
+        'params': {'from_date': params},
     }
     message = ('Запрос: {url}, {headers}, {params}.'
                ).format(**params_request)
@@ -70,7 +65,7 @@ def get_api_answer(timestamp):
                 f'Текст: {response.text}.'
             )
         return response.json()
-    except Exception as error:
+    except RequestException as error:
         message = ('Запрос: {url}, {headers}, {params}.'
                    ).format(**params_request)
         raise WrongResponseCode(message, error)
@@ -81,8 +76,13 @@ def check_response(response):
     logging.debug('Проверка ответа API на корректность')
     if not isinstance(response, dict):
         raise TypeError('Ответ API не является dict')
-    if 'homeworks' not in response or 'current_date' not in response:
+    if 'homeworks' not in response:
         raise KeyError('Нет ключа homeworks в ответе API')
+    if 'current_date' not in response:
+        raise KeyError('Нет ключа current_date в ответе API')
+    current_date = response['current_date']
+    if not isinstance(current_date, int):
+        raise TypeError('current_date не является целым числом')
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
         raise TypeError('homeworks не является list')
@@ -95,13 +95,13 @@ def parse_status(homework):
         raise KeyError('Отсутствует ключ "homework_name" в ответе API')
     if 'status' not in homework:
         raise KeyError('Отсутствует ключ "status" в ответе API')
-    homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
-    try:
-        verdict = HOMEWORK_VERDICTS[homework_status]
-    except KeyError as error:
-        logger.error('Неизвестный статус', error)
-        return ('Неизвестный статус', error)
+    if homework_status not in HOMEWORK_VERDICTS:
+        raise KeyError(
+            f'{homework_status} нет в словаре HOMEWORK_VERDICTS'
+        )
+    verdict = HOMEWORK_VERDICTS[homework_status]
+    homework_name = homework.get('homework_name')
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
@@ -119,14 +119,14 @@ def main():
     while True:
         try:
             response = get_api_answer(timestamp)
-            timestamp = response.get(
-                'current_date', int(time.time())
-            )
             homeworks = check_response(response)
             if homeworks:
                 message = parse_status(homeworks[0])
             else:
                 message = 'Нет новых статусов'
+            timestamp = response.get(
+                'current_date', int(time.time())
+            )
             if message != error_msg:
                 send_message(bot, message)
                 error_msg = message
@@ -145,7 +145,6 @@ if __name__ == '__main__':
         filename='main.log',
         format='%(asctime)s, %(levelname)s, %(name)s, %(message)s')
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
     handler = logging.StreamHandler(stream=sys.stdout)
     logger.addHandler(handler)
     main()
