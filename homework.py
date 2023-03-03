@@ -1,9 +1,10 @@
 import logging
 import os
-import requests
 import sys
-import telegram
 import time
+
+import requests
+import telegram
 
 from dotenv import load_dotenv
 from exceptions import WrongResponseCode
@@ -64,11 +65,11 @@ def get_api_answer(timestamp):
                 f'Причина: {response.reason}. '
                 f'Текст: {response.text}.'
             )
-        return response.json()
     except RequestException as error:
         message = ('Запрос: {url}, {headers}, {params}.'
                    ).format(**params_request)
         raise WrongResponseCode(message, error)
+    return response.json()
 
 
 def check_response(response):
@@ -79,10 +80,10 @@ def check_response(response):
     if 'homeworks' not in response:
         raise KeyError('Нет ключа homeworks в ответе API')
     if 'current_date' not in response:
-        raise KeyError('Нет ключа current_date в ответе API')
+        logging.error('Нет ключа current_date в ответе API')
     current_date = response['current_date']
     if not isinstance(current_date, int):
-        raise TypeError('current_date не является целым числом')
+        logging.error('current_date не является целым числом')
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
         raise TypeError('homeworks не является list')
@@ -97,7 +98,7 @@ def parse_status(homework):
         raise KeyError('Отсутствует ключ "status" в ответе API')
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_VERDICTS:
-        raise KeyError(
+        raise Exception(
             f'{homework_status} нет в словаре HOMEWORK_VERDICTS'
         )
     verdict = HOMEWORK_VERDICTS[homework_status]
