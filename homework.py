@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -65,15 +66,13 @@ def get_api_answer(timestamp):
                 f'Причина: {response.reason}. '
                 f'Текст: {response.text}.'
             )
+        return response.json()
     except RequestException as error:
         message = ('Запрос: {url}, {headers}, {params}.'
                    ).format(**params_request)
         raise WrongResponseCode(message, error)
-    try:
-        return response.json()
-    except ValueError:
-        logger.error('Ошибка ответа из формата json')
-        raise ValueError('Ошибка ответа из формата json')
+    except json.JSONDecodeError:
+        raise WrongResponseCode('Ошибка ответа из формата json')
 
 
 def check_response(response):
@@ -82,7 +81,9 @@ def check_response(response):
     if not isinstance(response, dict):
         raise TypeError('Ответ API не является dict')
     if 'homeworks' not in response:
-        raise KeyError('Нет ключа homeworks в ответе API')
+        raise WrongResponseCode('Пустой ответ API')
+    if 'current_date' not in response:
+        raise WrongResponseCode('Пустой ответ API')
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
         raise TypeError('homeworks не является list')
