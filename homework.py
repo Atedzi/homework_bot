@@ -10,7 +10,7 @@ import telegram
 from dotenv import load_dotenv
 from requests import RequestException
 
-from exceptions import WrongResponseCode
+from exceptions import WrongResponseCode, CurrentDateFailed
 
 load_dotenv()
 
@@ -133,7 +133,7 @@ def main():
                 error_msg = message
             else:
                 logging.info(message)
-        except Exception as error:
+        except CurrentDateFailed as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(message, exc_info=True)
         finally:
