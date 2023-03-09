@@ -83,11 +83,13 @@ def check_response(response):
     if 'homeworks' not in response:
         raise KeyError('Пустой ответ API')
     if 'current_date' not in response:
-        if isinstance(response.current_date, int):
-            raise CurrentDateFailed('Пустой ответ API')
+        raise CurrentDateFailed('Пустой ответ API')
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
         raise TypeError('homeworks не является list')
+    current_dates = response['current_date']
+    if not isinstance(current_dates, int):
+        raise TypeError('Значение current_date не является целым')
     return homeworks
 
 
@@ -134,10 +136,15 @@ def main():
                 error_msg = message
             else:
                 logging.info(message)
-        # except WrongResponseCode as error:
-        except not CurrentDateFailed as error:
+        except WrongResponseCode as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(message, exc_info=True)
+        except Exception as error:
+            message = f'Сбой в работе программы: {error}'
+            if message not in error_msg:
+                error_msg = message
+                logger.error(message, exc_info=True)
+                send_message(bot, message)
         finally:
             time.sleep(RETRY_PERIOD)
 
