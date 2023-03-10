@@ -89,7 +89,7 @@ def check_response(response):
         raise TypeError('homeworks не является list')
     current_dates = response['current_date']
     if not isinstance(current_dates, int):
-        raise TypeError('Значение current_date не является целым')
+        logging.error('Значение current_date не является целым')
     return homeworks
 
 
@@ -137,6 +137,10 @@ def main():
             else:
                 logging.info(message)
         except WrongResponseCode as error:
+            message = f'Сбой в работе программы: {error}'
+            logging.error(message, exc_info=True)
+            send_message(bot, message)
+        except CurrentDateFailed as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(message, exc_info=True)
         except Exception as error:
