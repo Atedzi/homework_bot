@@ -89,7 +89,7 @@ def check_response(response):
         raise TypeError('homeworks не является list')
     current_dates = response['current_date']
     if not isinstance(current_dates, int):
-        logging.error('Значение current_date не является целым')
+        raise CurrentDateFailed('Значение current_date не является целым')
     return homeworks
 
 
