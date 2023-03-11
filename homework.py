@@ -136,10 +136,6 @@ def main():
                 error_msg = message
             else:
                 logging.info(message)
-        except WrongResponseCode as error:
-            message = f'Сбой в работе программы: {error}'
-            logging.error(message, exc_info=True)
-            send_message(bot, message)
         except CurrentDateFailed as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(message, exc_info=True)
